@@ -1,18 +1,17 @@
 import requests
 import pytest
 
-BASE_URL = "https://jsonplaceholder.typicode.com"
 
-def test_get_posts():
+def test_get_posts(base_url):
     """Test to fetch all posts"""
-    response = requests.get(f"{BASE_URL}/posts")
+    response = requests.get(f"{base_url}/posts")
     # Validate HTTP status code
     assert response.status_code == 200
     # Validate response type is a list
     assert isinstance(response.json(), list)
 
 
-def test_create_post():
+def test_create_post(base_url):
     """"Test to create a post"""
 
     payload = {
@@ -21,7 +20,7 @@ def test_create_post():
         "userId": 1
     }
 
-    response = requests.post(f"{BASE_URL}/posts", json=payload)
+    response = requests.post(f"{base_url}/posts", json=payload)
     # Validate status code
     assert response.status_code == 201
 
@@ -32,3 +31,11 @@ def test_create_post():
     assert response_data["body"] == payload["body"]
     assert response_data["userId"] == payload["userId"]
     assert "id" in response_data  # The new post should have an ID
+
+
+@pytest.mark.parametrize("endpoint", ["posts", "comments", "albums"])
+def test_get_resources(base_url, endpoint):
+    """Test to fetch resources"""
+    response = requests.get(f"{base_url}/{endpoint}")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
