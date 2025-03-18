@@ -39,3 +39,12 @@ def test_get_resources(base_url, endpoint):
     response = requests.get(f"{base_url}/{endpoint}")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
+
+def test_authenticated_request(base_url, auth_token):
+    """Test an authenticated request"""
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    response = requests.get(f"{base_url}/posts/1", headers=headers)
+
+    assert response.status_code in [200, 403]
+    assert isinstance(response.json(), dict)
