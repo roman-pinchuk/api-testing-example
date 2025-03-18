@@ -3,6 +3,7 @@ import pytest
 
 @pytest.fixture
 def base_url():
+    """Fixture for base URL"""
     return "https://jsonplaceholder.typicode.com"
 
 
