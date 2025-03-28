@@ -1,11 +1,12 @@
 {
-  "name": "Python API Testing",
+  "name": "${localWorkspaceFolderBasename}-dev",
+  "runArgs": ["--name", "${localWorkspaceFolderBasename}-dev"],
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   // Install all Python dependencies
-  "postCreateCommand": "pip install requests pytest", 
+  "postCreateCommand": "pip install requests pytest",
   "customizations": {
     "vscode": {
       "extensions": ["ms-python.python"]

@@ -1,6 +1,8 @@
 import requests
 import requests_mock
 import pytest
+import tenacity
+from tenacity import retry, stop_after_attempt, wait_fixed, wait_exponential
 
 
 def test_get_posts(base_url):
@@ -76,3 +78,51 @@ def test_mocked_post_request(base_url):
 
         assert response.status_code == 201
         assert response.json() == {"id": 101}
+
+
+def test_api_timeout(base_url):
+    """Test handling API timeouts"""
+    with requests_mock.Mocker() as mock:
+        mock.get(f"{base_url}/posts/1", exc=requests.exceptions.Timeout)
+
+        with pytest.raises(requests.exceptions.Timeout):
+            requests.get(f"{base_url}/posts/1", timeout=0.01)
+
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+def fetch_post(base_url):
+    """Retries API request up to 3 times with a 2-second wait"""
+    response = requests.get(f"{base_url}/posts/1", timeout=2)
+
+    if response.status_code != 200:
+        raise requests.exceptions.RequestException(
+            f"API failed with status {response.status_code}")
+    return response.json()
+
+
+def test_api_retry(base_url):
+    """Test API retries in case of failure"""
+    with requests_mock.Mocker() as mock:
+        mock.get(f"{base_url}/posts/1", status_code=500)
+
+        with pytest.raises(tenacity.RetryError):
+            fetch_post(base_url)
+
+
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=1, max=10))
+def fetch_with_backoff(base_url):
+    """Retries API request with exponential backoff"""
+    response = requests.get(f"{base_url}/posts/1", timeout=10)
+
+    if response.status_code == 429:
+        raise requests.exceptions.RequestException("Rate limit exceeded")
+    return response.json()
+
+
+def test_fetch_with_backoff(base_url):
+    """Test API retries with exponential backoff in case of failure"""
+    with requests_mock.Mocker() as mock:
+        mock.get(f"{base_url}/posts/1", status_code=429)
+
+        with pytest.raises(tenacity.RetryError):
+            fetch_with_backoff(base_url)
